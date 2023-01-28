@@ -1,0 +1,8 @@
+C:\ILearning\Task7\Task7\obj\Release\net6.0\PubTmp\Out\Task7.exe
+C:\ILearning\Task7\Task7\obj\Release\net6.0\PubTmp\Out\appsettings.Development.json
+C:\ILearning\Task7\Task7\obj\Release\net6.0\PubTmp\Out\appsettings.json
+C:\ILearning\Task7\Task7\obj\Release\net6.0\PubTmp\Out\libman.json
+C:\ILearning\Task7\Task7\obj\Release\net6.0\PubTmp\Out\Task7.dll
+C:\ILearning\Task7\Task7\obj\Release\net6.0\PubTmp\Out\Task7.deps.json
+C:\ILearning\Task7\Task7\obj\Release\net6.0\PubTmp\Out\Task7.runtimeconfig.json
+C:\ILearning\Task7\Task7\obj\Release\net6.0\PubTmp\Out\Task7.pdb

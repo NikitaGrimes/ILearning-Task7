@@ -1,0 +1,217 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<form class="form-horizontal">
+    <div id="divImages">
+        <fieldset>
+            <div class="form-group">
+                <div class="offset-md-1">
+                    <label style="float:left">Your game sign:</label>
+                </div>
+                <div class="offset-md-10" id="divOpponentPlayer">
+                    <label>Opponent game sign:</label>
+                </div>
+                <div class="offset-md-1">
+                    <img src="" id="playerImage" style="height:100px;width:100px; float:left" />
+                </div>
+                <div class="offset-md-10" id="divOpponentPlayer">
+                    <img src="" id="opponentImage" style="height:100px;width:100px;" />
+                </div>
+            </div>
+        </fieldset>
+    </div>
+    <div class="row">
+        <div class="col-md-4 offset-md-4">
+            <div id="divLogin">
+                <fieldset>
+                    <legend>Login</legend>
+                    <label id="nameEnterError" class="control-label text-danger">Name should not be empty!</label>
+                    <div class="form-group">
+                        <label for="name" class="col-lg-2 control-label">Name</label>
+                        <div class="col-lg-10">
+                            <input type="text" class="form-control" id="name" placeholder="Name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-lg-10 col-lg-offset-2">
+                            <button type="button" class="btn btn-primary" id="btnLogin">Login</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+    <div id="divFindOpponentPlayer">
+        <div class="col-md-6 offset-md-4">
+            <legend>Find the opponent to play!</legend>
+            <div class="form-group">
+                <input type="button" class="btn btn-primary" id="btnFindOpponentPlayer" value="Find Opponent Player" />
+            </div>
+        </div>
+    </div>
+    <div id="divFindingOpponentPlayer">
+        <div class="col-md-6 offset-md-3">
+            <legend>Search in progress...</legend>
+            <div class="form-group">
+                Looking for an opponent player. Waiting for someone to join!
+            </div>
+        </div>
+    </div>
+    <div id="divGameInformation" class="form-group offset-md-4">
+        <div class="form-group" id="divInfo"></div>
+    </div>
+    <div id="divGame" class="col-md-6 offset-md-4" style="clear:both">
+        <fieldset>
+            <legend>Game</legend>
+            <div id="divGameBoard" style="width:380px">
+            </div>
+            <div id="divLeaveBattle" class="form-group">
+                <hr />
+                <input type="button" class="btn btn-danger" id="btnLeaveBattle" value="Leave the Battle" />
+                <div id="divConfirmLeaveBattle" class="form-group">
+                    <label>Are you sure?</label>
+                    <br/>
+                    <input type="button" class="btn btn-danger" id="btnConfirmLeaveBattle" value="Yes." />
+                    <input type="button" class="btn btn-success" id="btnStayInBattle" value="No!" />
+                </div>
+            </div>
+        </fieldset>
+    </div>
+</form>
+
+<script src="lib/signalr/dist/browser/signalr.min.js"></script>
+<script src="lib/signalr/dist/browser/signalr.js"></script>
+<script src="/lib/jquery/dist/jquery.js"></script>
+
+<script>
+    $("#divLogin").show();
+    $("#divFindOpponentPlayer").hide();
+    $("#divFindingOpponentPlayer").hide();
+    $("#divGame").hide();
+    $("#divGameInformation").hide();
+    $("#divImages").hide();
+    $("#divOpponentPlayer").hide();
+    $("#nameEnterError").hide();
+    $("#divLeaveBattle").hide();
+    $("#divConfirmLeaveBattle").hide();
+
+    var circleImage = "circle.png";
+    var crossImage = "cross.png";
+    var playerName = "";
+    var playerImage = "";
+    var opponentImage = "";
+
+    const hubConnection = new signalR.HubConnectionBuilder()
+        .withUrl("/gameHub")
+        .build();
+    hubConnection.start();
+
+    hubConnection.on('loginComplete', data => {
+        $("#divLogin").hide();
+        $('#divOpponentPlayer').hide();
+        $("#divFindOpponentPlayer").show();
+    });
+
+    hubConnection.on('waitingForOpponent', data => {
+        $('#divInfo').html("<br/><span><strong> Expect it! It's the " + data + "'s turn now.</strong></span>");
+    });
+
+    hubConnection.on('opponentFound', (data, _opponentImage, _playerImage) => {
+        $('#divFindOpponentPlayer').hide();
+        $('#divFindingOpponentPlayer').hide();
+        $('#divGame').show();
+        $('#divInfo').show();
+        $('#divGameInformation').show();
+        $('#divOpponentPlayer').show();
+        $("#divImages").show();
+        $("#divLeaveBattle").show();
+        $("#divConfirmLeaveBattle").hide();
+        opponentImage = _opponentImage;
+        playerImage = _playerImage;
+        $('#opponentImage').attr('src', "/images/" + _opponentImage);
+        $('#playerImage').attr('src', "/images/" + _playerImage);
+        $("#divGameBoard").html("");
+        for (var i = 0; i < 9; i++) {
+            $("#divGameBoard").append("<img class='marker' id=" + i + " src='' style='height: 100px; width: 100px; border:solid 5px black'/>");
+        }
+    });
+
+    hubConnection.on('opponentNotFound', data => {
+        $('#divFindOpponentPlayer').hide();
+        $('#divFindingOpponentPlayer').show();
+    });
+
+    hubConnection.on('opponentDisconnected', data => {
+        $("#divLogin").hide();
+        $('#divGame').hide();
+        $("#divImages").hide();
+        $("#divLeaveBattle").hide();
+        $('#divFindOpponentPlayer').show();
+        $("#divConfirmLeaveBattle").hide();
+        $('#divInfo').html("<br/><span><strong>Your opponent disconnected or left the battle! You are the winner!!!</strong></span>");
+
+    });
+
+    hubConnection.on('waitingForMove', data => {
+        $('#divInfo').html("<br/><span><strong> Your turn <i>" + playerName + "</i>! Make a winning move!</strong></span>");
+    });
+
+    hubConnection.on('moveMade', (opponentName, position, image) => {
+        if (image == playerImage) {
+            $("#" + position).addClass("notAvailable");
+            $("#" + position).attr('src', "/images/" + image);
+            $('#divInfo').html("<br/><strong>Expect it! It's the " + opponentName + "'s turn now.</strong>");
+        }
+        else {
+            $("#" + position).addClass("notAvailable");
+            $("#" + position).attr('src', "/images/" + image);
+            $('#divInfo').html("<br/><span><strong> Your turn <i>" + opponentName + "</i>! Make a winning move!</strong></span>");
+        }
+    });
+
+    hubConnection.on('gameOver', data => {
+        $("#divImages").hide();
+        $("#divLeaveBattle").hide();
+        $("#divConfirmLeaveBattle").hide();
+        $('#divInfo').html("<br/><span><strong>Hey " + playerName + "! " + data + "!</strong></span>");
+        $('#divOpponentPlayer').hide();
+    });
+
+    $("#btnLogin").click(function () {
+        playerName = $('#name').val();
+        if (playerName.split(' ').join('') == ""){
+            $("#nameEnterError").show();
+        }
+        else{
+            $("#nameEnterError").hide();
+            hubConnection.invoke('LoginPlayer', playerName);
+        }
+    });
+
+    $("#btnFindOpponentPlayer").click(function () {
+        hubConnection.invoke('FindOpponent');
+    });
+
+    $("#btnLeaveBattle").click(function () {
+        $("#divConfirmLeaveBattle").show();
+    });
+
+    $("#btnConfirmLeaveBattle").click(function () {
+        hubConnection.invoke('LeaveTheBattle');
+        $("#divGame").hide();
+        $('#divInfo').hide();
+    });
+
+    $("#btnStayInBattle").click(function () {
+        $("#divConfirmLeaveBattle").hide();
+    });
+
+    $(document).on('click', '.marker', function () {
+        if ($(this).hasClass("notAvailable")) {
+            return;
+        }
+        var position = parseInt($(this)[0].id)
+        hubConnection.invoke('MakeAMove', position);
+    });
+</script>
